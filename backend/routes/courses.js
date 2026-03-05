@@ -1,0 +1,124 @@
+const express = require('express');
+const router = express.Router();
+const pool = require('../config/db');
+const { verifyToken, isInstructor } = require('../middleware/auth');
+
+// Get all courses (Public)
+router.get('/courses', async (req, res) => {
+    try {
+        // Includes instructor name and basic stats
+        const query = `
+            SELECT 
+                c.*, 
+                u.name as instructor_name,
+                (SELECT COUNT(*) FROM lessons l JOIN sections s ON l.section_id = s.id WHERE s.course_id = c.id) as total_lessons,
+                (SELECT COALESCE(SUM(duration), 0) FROM lessons l JOIN sections s ON l.section_id = s.id WHERE s.course_id = c.id) as total_duration
+            FROM courses c
+            JOIN users u ON c.instructor_id = u.id
+            ORDER BY c.created_at DESC
+        `;
+        const [courses] = await pool.query(query);
+        res.json(courses);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Get single course details (Public)
+router.get('/course/:id', async (req, res) => {
+    try {
+        const courseId = req.params.id;
+
+        // Course info
+        const [courseResult] = await pool.query(`
+            SELECT c.*, u.name as instructor_name 
+            FROM courses c
+            JOIN users u ON c.instructor_id = u.id
+            WHERE c.id = ?
+        `, [courseId]);
+
+        if (courseResult.length === 0) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        const course = courseResult[0];
+
+        // Sections
+        const [sections] = await pool.query('SELECT * FROM sections WHERE course_id = ? ORDER BY order_number', [courseId]);
+
+        // Lessons per section
+        const [lessons] = await pool.query('SELECT * FROM lessons WHERE course_id = ? ORDER BY order_number', [courseId]);
+
+        // Structure sections with embedded lessons
+        const structuredSections = sections.map(section => ({
+            ...section,
+            lessons: lessons.filter(l => l.section_id === section.id)
+        }));
+
+        res.json({
+            ...course,
+            sections: structuredSections,
+            total_lessons: lessons.length,
+            total_duration: lessons.reduce((acc, curr) => acc + curr.duration, 0)
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Create new course (Instructor/Admin only)
+router.post('/course', verifyToken, isInstructor, async (req, res) => {
+    try {
+        const { title, description, thumbnail, category, difficulty, sections } = req.body;
+
+        // Start transaction
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Insert course
+            const [courseResult] = await connection.query(
+                'INSERT INTO courses (title, description, thumbnail, category, difficulty, instructor_id) VALUES (?, ?, ?, ?, ?, ?)',
+                [title, description, thumbnail, category, difficulty, req.userId]
+            );
+            const courseId = courseResult.insertId;
+
+            // Optional: Insert sections and lessons if provided in one go
+            if (sections && Array.isArray(sections)) {
+                for (let i = 0; i < sections.length; i++) {
+                    const section = sections[i];
+                    const [sectionResult] = await connection.query(
+                        'INSERT INTO sections (course_id, title, order_number) VALUES (?, ?, ?)',
+                        [courseId, section.title, i + 1]
+                    );
+                    const sectionId = sectionResult.insertId;
+
+                    if (section.lessons && Array.isArray(section.lessons)) {
+                        for (let j = 0; j < section.lessons.length; j++) {
+                            const lesson = section.lessons[j];
+                            await connection.query(
+                                'INSERT INTO lessons (course_id, section_id, title, order_number, youtube_url, duration, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                                [courseId, sectionId, lesson.title, j + 1, lesson.youtube_url, lesson.duration || 0, lesson.description]
+                            );
+                        }
+                    }
+                }
+            }
+
+            await connection.commit();
+            res.status(201).json({ message: 'Course created successfully', courseId });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = router;

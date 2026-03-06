@@ -195,7 +195,7 @@ export default function InstructorDashboard() {
                         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>Curriculum</h2>
 
                         {sections.map((section, sIdx) => (
-                            <div key={sIdx} style={{ backgroundColor: '#f8fafc', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1rem' }}>
+                            <div key={sIdx} style={{ backgroundColor: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1rem' }}>
                                 <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ flex: 1, marginRight: '1rem' }}>
                                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Section {sIdx + 1} Title</label>
@@ -206,7 +206,7 @@ export default function InstructorDashboard() {
 
                                 <div style={{ marginLeft: '1.5rem', paddingLeft: '1.5rem', borderLeft: '2px solid var(--border)' }}>
                                     {section.lessons.map((lesson, lIdx) => (
-                                        <div key={lIdx} style={{ backgroundColor: 'white', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '0.75rem', position: 'relative' }}>
+                                        <div key={lIdx} style={{ backgroundColor: 'var(--background)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '0.75rem', position: 'relative' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                                                 <h4 style={{ fontSize: '0.875rem', fontWeight: 600 }}>Lesson {lIdx + 1}</h4>
                                                 <button type="button" onClick={() => removeLesson(sIdx, lIdx)} style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>Remove</button>

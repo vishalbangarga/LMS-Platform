@@ -23,8 +23,8 @@ router.post('/progress', verifyToken, async (req, res) => {
 
         // Insert or ignore if already marked complete
         await pool.query(
-            'INSERT IGNORE INTO progress (user_id, course_id, lesson_id, status) VALUES (?, ?, ?, "completed")',
-            [req.userId, course_id, lesson_id]
+            'INSERT IGNORE INTO progress (user_id, course_id, lesson_id, status) VALUES (?, ?, ?, ?)',
+            [req.userId, course_id, lesson_id, 'completed']
         );
 
         res.status(200).json({ message: 'Progress updated' });

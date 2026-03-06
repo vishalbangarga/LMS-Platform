@@ -124,7 +124,7 @@ export default function CourseDetails() {
                 <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
                     {course.sections?.map((section, idx) => (
                         <div key={section.id} style={{ borderBottom: idx !== course.sections.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                            <div style={{ padding: '1rem 1.5rem', backgroundColor: '#f8fafc', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ padding: '1rem 1.5rem', backgroundColor: 'var(--surface)', color: 'var(--text-main)', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
                                 <span>Section {section.order_number}: {section.title}</span>
                                 <span className="text-muted" style={{ fontWeight: 400 }}>{section.lessons?.length || 0} lessons</span>
                             </div>

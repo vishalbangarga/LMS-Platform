@@ -9,6 +9,7 @@ import InstructorDashboard from './pages/InstructorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import MyCourses from './pages/MyCourses';
 import { LogOut, BookOpen, Sun, Moon } from 'lucide-react';
 
 const ProtectedRoute = ({ children, roleRequired }) => {
@@ -68,6 +69,7 @@ const Header = () => {
                     <Link to="/courses" className="nav-link">Courses</Link>
                     {user ? (
                         <>
+                            {user.role === 'student' && <Link to="/my-courses" className="nav-link">My Courses</Link>}
                             {user.role === 'instructor' && <Link to="/instructor" className="nav-link">Instructor Portal</Link>}
                             {user.role === 'admin' && <Link to="/admin" className="nav-link">Admin Portal</Link>}
                             <button onClick={logout} className="nav-link flex items-center gap-2">
@@ -86,6 +88,16 @@ const Header = () => {
     );
 };
 
+import Chatbot from './components/Chatbot';
+
+function GlobalChatbot() {
+    const { user } = useAuth();
+    if (user && user.role === 'student') {
+        return <Chatbot currentLesson={null} />; // We remove currentLesson dependency or handle it via local storage/context later
+    }
+    return null;
+}
+
 function AppRoutes() {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -98,10 +110,12 @@ function AppRoutes() {
                     <Route path="/courses" element={<Courses />} />
                     <Route path="/course/:courseId" element={<CourseDetails />} />
                     <Route path="/learn/:courseId" element={<ProtectedRoute><LearningInterface /></ProtectedRoute>} />
+                    <Route path="/my-courses" element={<ProtectedRoute roleRequired="student"><MyCourses /></ProtectedRoute>} />
                     <Route path="/instructor" element={<ProtectedRoute roleRequired="instructor"><InstructorDashboard /></ProtectedRoute>} />
                     <Route path="/admin" element={<ProtectedRoute roleRequired="admin"><AdminDashboard /></ProtectedRoute>} />
                 </Routes>
             </main>
+            <GlobalChatbot />
         </div>
     );
 }

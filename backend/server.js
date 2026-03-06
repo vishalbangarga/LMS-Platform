@@ -7,6 +7,7 @@ const courseRoutes = require('./routes/courses');
 const lessonRoutes = require('./routes/lessons');
 const enrollmentRoutes = require('./routes/enrollments');
 const progressRoutes = require('./routes/progress');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,7 @@ app.use('/api', courseRoutes);
 app.use('/api', lessonRoutes);
 app.use('/api', enrollmentRoutes);
 app.use('/api', progressRoutes);
+app.use('/api', chatRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'LMS API is running' });

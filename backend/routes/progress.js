@@ -8,9 +8,16 @@ router.post('/progress', verifyToken, async (req, res) => {
     try {
         const { course_id, lesson_id } = req.body;
 
-        // Verify enrollment
+        // Verify enrollment or ownership or admin
         const [enrollment] = await pool.query('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?', [req.userId, course_id]);
-        if (enrollment.length === 0) {
+        let authorized = enrollment.length > 0;
+
+        if (!authorized) {
+            const [course] = await pool.query('SELECT instructor_id FROM courses WHERE id = ?', [course_id]);
+            authorized = (course.length > 0 && course[0].instructor_id === req.userId) || req.userRole === 'admin';
+        }
+
+        if (!authorized) {
             return res.status(403).json({ message: 'Must be enrolled to track progress' });
         }
 

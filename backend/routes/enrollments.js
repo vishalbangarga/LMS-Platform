@@ -55,4 +55,16 @@ router.get('/my-courses', verifyToken, async (req, res) => {
     }
 });
 
+// Check enrollment status
+router.get('/course/:id/check-enrollment', verifyToken, async (req, res) => {
+    try {
+        const courseId = req.params.id;
+        const [existing] = await pool.query('SELECT id FROM enrollments WHERE user_id = ? AND course_id = ?', [req.userId, courseId]);
+        res.json({ enrolled: existing.length > 0 });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

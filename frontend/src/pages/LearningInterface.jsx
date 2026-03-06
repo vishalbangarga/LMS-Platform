@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { PlayCircle, CheckCircle, Circle, ChevronLeft, ChevronRight, Menu, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../config';
+import Chatbot from '../components/Chatbot';
 
 export default function LearningInterface() {
     const { courseId } = useParams();
@@ -37,9 +38,14 @@ export default function LearningInterface() {
 
                 // Get progress
                 let progressRes = { data: { completed_lesson_ids: [] } };
-                if (user && user.role === 'student') {
-                    progressRes = await axios.get(`${API_URL}/progress/${courseId}`, { headers });
-                    setProgress(progressRes.data);
+                if (user) {
+                    try {
+                        progressRes = await axios.get(`${API_URL}/progress/${courseId}`, { headers });
+                        setProgress(progressRes.data);
+                    } catch (e) {
+                        // Fallback empty progress if they are not allowed to track, but shouldn't error out hard.
+                        setProgress(progressRes.data);
+                    }
                 }
 
                 // Determine start lesson (first incomplete, or just first)
@@ -61,28 +67,52 @@ export default function LearningInterface() {
     }, [courseId, navigate, user]);
 
     const markComplete = async () => {
-        if (!currentLesson || user.role !== 'student') return;
+        if (!currentLesson) return;
+
+        // Eagerly update local state for instantaneous feedback
+        if (!completedIds.includes(currentLesson.id)) {
+            const newCompletedIds = [...completedIds, currentLesson.id];
+            const newPercentage = lessons.length > 0 ? Math.round((newCompletedIds.length / lessons.length) * 100) : 0;
+
+            setProgress(prev => ({
+                ...(prev || {}),
+                completed_lesson_ids: newCompletedIds,
+                progress_percentage: newPercentage,
+                completed_lessons: newCompletedIds.length,
+                total_lessons: lessons.length
+            }));
+        }
+
+        // Go to next lesson automatically right away so user isn't waiting on the background request
+        const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
+        if (currentIndex < lessons.length - 1) {
+            setCurrentLesson(lessons[currentIndex + 1]);
+        }
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${API_URL}/progress`, {
-                course_id: courseId,
-                lesson_id: currentLesson.id
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            // Re-fetch progress
-            const progressRes = await axios.get(`${API_URL}/progress/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setProgress(progressRes.data);
-
-            // Go to next lesson automatically
-            const currentIndex = lessons.findIndex(l => l.id === currentLesson.id);
-            if (currentIndex < lessons.length - 1) {
-                setCurrentLesson(lessons[currentIndex + 1]);
+            // Try to mark it in the backend
+            try {
+                await axios.post(`${API_URL}/progress`, {
+                    course_id: courseId,
+                    lesson_id: currentLesson.id
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } catch (err) {
+                console.error("Failed to save progress to backend:", err);
             }
+
+            // Re-fetch progress silently in background to ensure it perfectly matches the DB state
+            try {
+                const progressRes = await axios.get(`${API_URL}/progress/${courseId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setProgress(progressRes.data);
+            } catch (err) {
+                console.error("Failed to re-fetch progress:", err);
+            }
+
         } catch (err) {
             console.error(err);
         }
@@ -114,11 +144,11 @@ export default function LearningInterface() {
         <div style={{ display: 'flex', height: 'calc(100vh - 4rem)', overflow: 'hidden' }}>
 
             {/* Main Content Area */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', backgroundColor: '#0f172a', position: 'relative' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', backgroundColor: 'var(--background)', position: 'relative' }}>
                 {/* Header within player */}
-                <div style={{ padding: '1rem 1.5rem', backgroundColor: '#1e293b', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '1rem 1.5rem', backgroundColor: 'var(--surface)', color: 'var(--text-main)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ color: 'white' }}>
+                        <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{ color: 'var(--text-main)' }}>
                             <Menu />
                         </button>
                         <h2 style={{ fontSize: '1.125rem', fontWeight: 600, margin: 0, padding: 0 }}>{course.title}</h2>
@@ -126,7 +156,7 @@ export default function LearningInterface() {
                     {progress && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.875rem' }}>
                             <span>{progress.progress_percentage}% Complete</span>
-                            <div style={{ width: '100px', height: '6px', backgroundColor: '#334155', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: '100px', height: '6px', backgroundColor: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
                                 <div style={{ width: `${progress.progress_percentage}%`, height: '100%', backgroundColor: 'var(--secondary)', transition: 'width 0.3s ease' }} />
                             </div>
                         </div>
@@ -162,7 +192,7 @@ export default function LearningInterface() {
                                     <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>{currentLesson.title}</h1>
                                     <p style={{ color: 'var(--text-muted)' }}>{currentLesson.description}</p>
                                 </div>
-                                {user.role === 'student' && (
+                                {(user.role === 'student' || user.role === 'instructor' || user.role === 'admin') && (
                                     <button
                                         onClick={markComplete}
                                         disabled={completedIds.includes(currentLesson.id)}
@@ -197,7 +227,7 @@ export default function LearningInterface() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'white' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-main)' }}>
                         No lessons available.
                     </div>
                 )}
@@ -212,7 +242,7 @@ export default function LearningInterface() {
                     <div>
                         {course.sections?.map((section) => (
                             <div key={section.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <div style={{ padding: '1rem', backgroundColor: '#f8fafc', fontWeight: 600, fontSize: '0.875rem' }}>
+                                <div style={{ padding: '1rem', backgroundColor: 'var(--background)', fontWeight: 600, fontSize: '0.875rem' }}>
                                     {section.title}
                                 </div>
                                 <div>
@@ -230,7 +260,7 @@ export default function LearningInterface() {
                                                     alignItems: 'flex-start',
                                                     gap: '0.75rem',
                                                     cursor: 'pointer',
-                                                    backgroundColor: isActive ? '#e0e7ff' : 'transparent',
+                                                    backgroundColor: isActive ? 'rgba(79, 70, 229, 0.1)' : 'transparent',
                                                     borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
                                                     transition: 'all 0.2s ease'
                                                 }}
@@ -260,6 +290,8 @@ export default function LearningInterface() {
                     </div>
                 </div>
             )}
+
+            {/* Chatbot removed, relocating to App.jsx */}
         </div>
     );
 }

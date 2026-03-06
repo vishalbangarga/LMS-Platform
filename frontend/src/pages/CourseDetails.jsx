@@ -10,22 +10,37 @@ export default function CourseDetails() {
     const [course, setCourse] = useState(null);
     const [loading, setLoading] = useState(true);
     const [enrolling, setEnrolling] = useState(false);
+    const [isEnrolled, setIsEnrolled] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchCourse = async () => {
+        const fetchCourseAndEnrollment = async () => {
             try {
                 const res = await axios.get(`${API_URL}/course/${courseId}`);
                 setCourse(res.data);
+
+                if (user) {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        try {
+                            const enrollRes = await axios.get(`${API_URL}/course/${courseId}/check-enrollment`, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            });
+                            setIsEnrolled(enrollRes.data.enrolled);
+                        } catch (err) {
+                            console.error("Error checking enrollment:", err);
+                        }
+                    }
+                }
             } catch (err) {
                 console.error(err);
             } finally {
                 setLoading(false);
             }
         };
-        fetchCourse();
-    }, [courseId]);
+        fetchCourseAndEnrollment();
+    }, [courseId, user]);
 
     const handleEnroll = async () => {
         if (!user) {
@@ -80,16 +95,22 @@ export default function CourseDetails() {
                     <div className="card" style={{ padding: '0', overflow: 'hidden', border: '1px solid #374151' }}>
                         <div style={{ padding: '1.5rem', backgroundColor: 'var(--surface)', color: 'var(--text-main)' }}>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem' }}>Ready to start learning?</h3>
-                            <button
-                                onClick={handleEnroll}
-                                disabled={enrolling}
-                                className="btn btn-primary w-full flex justify-center items-center gap-2"
-                                style={{ padding: '1rem', fontSize: '1.125rem', marginBottom: '1rem' }}
-                            >
-                                {enrolling ? 'Enrolling...' : (
-                                    <>Enroll Now <PlayCircle size={20} /></>
-                                )}
-                            </button>
+                            {isEnrolled ? (
+                                <Link to={`/learn/${courseId}`} className="btn btn-primary w-full flex justify-center items-center gap-2" style={{ padding: '1rem', fontSize: '1.125rem', marginBottom: '1rem' }}>
+                                    Go to Course <PlayCircle size={20} />
+                                </Link>
+                            ) : (
+                                <button
+                                    onClick={handleEnroll}
+                                    disabled={enrolling}
+                                    className="btn btn-primary w-full flex justify-center items-center gap-2"
+                                    style={{ padding: '1rem', fontSize: '1.125rem', marginBottom: '1rem' }}
+                                >
+                                    {enrolling ? 'Enrolling...' : (
+                                        <>Enroll Now <PlayCircle size={20} /></>
+                                    )}
+                                </button>
+                            )}
                             <p className="text-center text-muted" style={{ fontSize: '0.875rem' }}>Full lifetime access. Access on mobile and TV.</p>
                         </div>
                     </div>

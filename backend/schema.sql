@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS courses (
     description TEXT,
     thumbnail VARCHAR(255),
     category VARCHAR(100),
+    price DECIMAL(10, 2) DEFAULT 0.00,
     difficulty VARCHAR(50) DEFAULT 'Beginner',
     instructor_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

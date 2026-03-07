@@ -57,6 +57,12 @@ export default function Courses() {
 
                             <div className="flex items-center justify-between">
                                 <div style={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                                    {Number(course.price) === 0 || !course.price ? (
+                                        <span style={{ color: 'var(--secondary)', fontWeight: 'bold' }}>Free</span>
+                                    ) : (
+                                        <span style={{ fontWeight: 'bold' }}>${Number(course.price).toFixed(2)}</span>
+                                    )}
+                                    <span style={{ margin: '0 0.5rem', color: 'var(--border)' }}>|</span>
                                     By <span style={{ color: 'var(--text-main)' }}>{course.instructor_name}</span>
                                 </div>
                                 <Link to={`/course/${course.id}`} className="btn btn-primary" style={{ padding: '0.5rem 1rem' }}>View Course</Link>

@@ -71,7 +71,7 @@ router.get('/course/:id', async (req, res) => {
 // Create new course (Instructor/Admin only)
 router.post('/course', verifyToken, isInstructor, async (req, res) => {
     try {
-        const { title, description, thumbnail, category, difficulty, sections } = req.body;
+        const { title, description, thumbnail, category, price, difficulty, sections } = req.body;
 
         // Start transaction
         const connection = await pool.getConnection();
@@ -80,8 +80,8 @@ router.post('/course', verifyToken, isInstructor, async (req, res) => {
         try {
             // Insert course
             const [courseResult] = await connection.query(
-                'INSERT INTO courses (title, description, thumbnail, category, difficulty, instructor_id) VALUES (?, ?, ?, ?, ?, ?)',
-                [title, description, thumbnail, category, difficulty, req.userId]
+                'INSERT INTO courses (title, description, thumbnail, category, price, difficulty, instructor_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [title, description, thumbnail, category, price || 0, difficulty, req.userId]
             );
             const courseId = courseResult.insertId;
 
@@ -152,7 +152,7 @@ router.delete('/course/:id', verifyToken, isInstructor, async (req, res) => {
 router.put('/course/:id', verifyToken, isInstructor, async (req, res) => {
     try {
         const courseId = req.params.id;
-        const { title, description, thumbnail, category, difficulty, sections } = req.body;
+        const { title, description, thumbnail, category, price, difficulty, sections } = req.body;
 
         // Verify ownership
         const [courseResult] = await pool.query('SELECT instructor_id FROM courses WHERE id = ?', [courseId]);
@@ -170,8 +170,8 @@ router.put('/course/:id', verifyToken, isInstructor, async (req, res) => {
         try {
             // Update course details
             await connection.query(
-                'UPDATE courses SET title = ?, description = ?, thumbnail = ?, category = ?, difficulty = ? WHERE id = ?',
-                [title, description, thumbnail, category, difficulty, courseId]
+                'UPDATE courses SET title = ?, description = ?, thumbnail = ?, category = ?, price = ?, difficulty = ? WHERE id = ?',
+                [title, description, thumbnail, category, price || 0, difficulty, courseId]
             );
 
             if (sections && Array.isArray(sections)) {

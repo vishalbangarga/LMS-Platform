@@ -76,7 +76,10 @@ export default function CourseDetails() {
                     <div>
                         <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem' }}>{course.category}</div>
                         <h1 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '1rem', lineHeight: 1.2 }}>{course.title}</h1>
-                        <p style={{ fontSize: '1.125rem', color: '#9ca3af', marginBottom: '2rem', lineHeight: 1.6 }}>{course.description}</p>
+                        <p style={{ fontSize: '1.125rem', color: '#9ca3af', marginBottom: '1rem', lineHeight: 1.6 }}>{course.description}</p>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--secondary)', marginBottom: '2rem' }}>
+                            {Number(course.price) === 0 || !course.price ? 'Free' : `$${Number(course.price).toFixed(2)}`}
+                        </div>
 
                         <div className="flex items-center gap-6" style={{ marginBottom: '2rem' }}>
                             <div className="flex items-center gap-2">
@@ -107,7 +110,10 @@ export default function CourseDetails() {
                                     style={{ padding: '1rem', fontSize: '1.125rem', marginBottom: '1rem' }}
                                 >
                                     {enrolling ? 'Enrolling...' : (
-                                        <>Enroll Now <PlayCircle size={20} /></>
+                                        <>
+                                            {Number(course.price) === 0 || !course.price ? 'Enroll for Free ' : `Buy for $${Number(course.price).toFixed(2)} `}
+                                            <PlayCircle size={20} />
+                                        </>
                                     )}
                                 </button>
                             )}

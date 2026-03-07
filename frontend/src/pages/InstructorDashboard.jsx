@@ -16,6 +16,7 @@ export default function InstructorDashboard() {
     const [description, setDescription] = useState('');
     const [thumbnail, setThumbnail] = useState('');
     const [category, setCategory] = useState('Technology');
+    const [price, setPrice] = useState('');
     const [sections, setSections] = useState([{ title: '', lessons: [{ title: '', youtube_url: '', duration: '' }] }]);
 
     useEffect(() => {
@@ -36,7 +37,7 @@ export default function InstructorDashboard() {
         try {
             const token = localStorage.getItem('token');
             const payload = {
-                title, description, thumbnail, category, difficulty: 'All Levels', sections
+                title, description, thumbnail, category, price, difficulty: 'All Levels', sections
             };
 
             if (editingCourseId) {
@@ -60,7 +61,7 @@ export default function InstructorDashboard() {
     };
 
     const resetForm = () => {
-        setTitle(''); setDescription(''); setThumbnail(''); setCategory('Technology');
+        setTitle(''); setDescription(''); setThumbnail(''); setCategory('Technology'); setPrice('');
         setSections([{ title: '', lessons: [{ title: '', youtube_url: '', duration: '' }] }]);
         setEditingCourseId(null);
     };
@@ -73,6 +74,7 @@ export default function InstructorDashboard() {
             setDescription(data.description || '');
             setThumbnail(data.thumbnail || '');
             setCategory(data.category || 'Technology');
+            setPrice(data.price || '');
 
             if (data.sections && data.sections.length > 0) {
                 setSections(data.sections.map(s => ({
@@ -189,6 +191,10 @@ export default function InstructorDashboard() {
                                     <option>Technology</option><option>Business</option><option>Design</option>
                                     <option>Marketing</option><option>Personal Development</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Price ($) (Leave 0 for Free)</label>
+                                <input type="number" step="0.01" min="0" value={price} onChange={e => setPrice(e.target.value)} className="input" placeholder="e.g. 19.99" />
                             </div>
                         </div>
 

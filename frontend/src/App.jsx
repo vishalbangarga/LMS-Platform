@@ -55,7 +55,7 @@ const Header = () => {
             <div className="container header-inner">
                 <Link to="/" className="flex items-center gap-2" style={{ fontWeight: 'bold', fontSize: '1.25rem', color: 'var(--primary)' }}>
                     <BookOpen />
-                    LMS Platform
+                    ProPath
                 </Link>
                 <nav className="nav-links">
                     <button

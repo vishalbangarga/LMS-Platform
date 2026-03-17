@@ -25,10 +25,9 @@ export default function Chatbot({ currentLesson }) {
         }
     }, [messages, isOpen]);
 
-    // Add welcome message if opened for the first time
     useEffect(() => {
         if (isOpen && messages.length === 0) {
-            setMessages([{ role: 'assistant', content: 'Hello! I am your AI Tutor. How can I help you with this lesson?' }]);
+            setMessages([{ role: 'assistant', content: 'Hello! I am AI Pro. How can I help you with this lesson?' }]);
         }
     }, [isOpen]);
 
@@ -191,7 +190,7 @@ export default function Chatbot({ currentLesson }) {
                     }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <MessageSquare size={20} />
-                            <span style={{ fontWeight: 600 }}>AI Tutor</span>
+                            <span style={{ fontWeight: 600 }}>AI Pro</span>
                         </div>
                         <button onClick={() => setIsOpen(false)} style={{ color: 'white' }}>
                             <X size={20} />

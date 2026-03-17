@@ -12,7 +12,9 @@ router.get('/courses', async (req, res) => {
                 c.*, 
                 u.name as instructor_name,
                 (SELECT COUNT(*) FROM lessons l JOIN sections s ON l.section_id = s.id WHERE s.course_id = c.id) as total_lessons,
-                (SELECT COALESCE(SUM(duration), 0) FROM lessons l JOIN sections s ON l.section_id = s.id WHERE s.course_id = c.id) as total_duration
+                (SELECT COALESCE(SUM(duration), 0) FROM lessons l JOIN sections s ON l.section_id = s.id WHERE s.course_id = c.id) as total_duration,
+                (SELECT COUNT(*) FROM reviews r WHERE r.course_id = c.id) as total_reviews,
+                (SELECT COALESCE(AVG(rating), 0) FROM reviews r WHERE r.course_id = c.id) as average_rating
             FROM courses c
             JOIN users u ON c.instructor_id = u.id
             ORDER BY c.created_at DESC
@@ -32,7 +34,12 @@ router.get('/course/:id', async (req, res) => {
 
         // Course info
         const [courseResult] = await pool.query(`
-            SELECT c.*, u.name as instructor_name 
+            SELECT 
+                c.*, 
+                u.name as instructor_name,
+                (SELECT COUNT(*) FROM reviews r WHERE r.course_id = c.id) as total_reviews,
+                (SELECT COALESCE(AVG(rating), 0) FROM reviews r WHERE r.course_id = c.id) as average_rating
+
             FROM courses c
             JOIN users u ON c.instructor_id = u.id
             WHERE c.id = ?

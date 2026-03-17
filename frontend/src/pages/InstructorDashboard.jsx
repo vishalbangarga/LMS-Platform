@@ -3,15 +3,24 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Plus } from 'lucide-react';
 import { API_URL } from '../config';
+import { getCourseThumbnail } from '../utils';
+
 
 export default function InstructorDashboard() {
     const { user } = useAuth();
     const [courses, setCourses] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingCourse, setEditingCourse] = useState(null);
 
-    const [editingCourseId, setEditingCourseId] = useState(null);
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good morning";
+        if (hour < 18) return "Good afternoon";
+        return "Good evening";
+    };
 
-    // Form state
+    // Form states
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [thumbnail, setThumbnail] = useState('');
@@ -29,6 +38,47 @@ export default function InstructorDashboard() {
             setCourses(res.data.filter(c => c.instructor_id === user.id));
         } catch (err) {
             console.error(err);
+        }
+    };
+
+    const handlePlaylistImport = async (url) => {
+        if (!url) return;
+        try {
+            // Regex to extract playlist ID
+            const regExp = /[&?]list=([^&]+)/;
+            const match = url.match(regExp);
+            if (!match) {
+                alert("Invalid YouTube playlist URL. Please make sure it contains 'list=ID'");
+                return;
+            }
+            const playlistId = match[1];
+
+            // In a real scenario, we'd call the YouTube API here.
+            // Since we don't have a key, we'll provide a placeholder functionality or 
+            // suggest the user how to add their API key.
+            // For now, I will simulate adding 3-5 placeholder lessons from that ID
+            // to show how it would look.
+            
+            const newLessons = [
+                { title: 'Intro to Playlist Content', youtube_url: `https://www.youtube.com/watch?v=video1&list=${playlistId}`, duration: 10 },
+                { title: 'Deep Dive Part 1', youtube_url: `https://www.youtube.com/watch?v=video2&list=${playlistId}`, duration: 15 },
+                { title: 'Deep Dive Part 2', youtube_url: `https://www.youtube.com/watch?v=video3&list=${playlistId}`, duration: 12 },
+                { title: 'Practical Examples', youtube_url: `https://www.youtube.com/watch?v=video4&list=${playlistId}`, duration: 20 },
+                { title: 'Conclusion and Next Steps', youtube_url: `https://www.youtube.com/watch?v=video5&list=${playlistId}`, duration: 5 }
+            ];
+
+            const updatedSections = [...sections];
+            // Add to the last section or create a new one
+            if (updatedSections.length > 0) {
+                updatedSections[updatedSections.length - 1].lessons.push(...newLessons);
+            } else {
+                updatedSections.push({ title: 'Imported Playlist', lessons: newLessons });
+            }
+            setSections(updatedSections);
+            alert("Playlist lessons imported! (Preview mode using placeholder metadata)");
+        } catch (err) {
+            console.error("Failed to import playlist", err);
+            alert("Failed to parse playlist.");
         }
     };
 
@@ -151,8 +201,11 @@ export default function InstructorDashboard() {
 
     return (
         <div className="container mt-4 mb-8">
-            <div className="flex justify-between items-center mb-8">
-                <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Instructor Dashboard</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold' }}>Instructor Dashboard</h1>
+                    <p className="text-muted" style={{ fontSize: '1rem', marginTop: '0.25rem' }}>{getGreeting()}, <span style={{ color: 'var(--primary)', fontWeight: 600 }}>{user.name}</span>!</p>
+                </div>
                 <button onClick={() => {
                     if (showCreateForm) {
                         setShowCreateForm(false);
@@ -161,7 +214,7 @@ export default function InstructorDashboard() {
                         resetForm();
                         setShowCreateForm(true);
                     }
-                }} className="btn btn-primary flex items-center gap-2">
+                }} className="btn btn-primary w-full md:w-auto flex items-center justify-center gap-2">
                     {showCreateForm ? 'Cancel Form' : <><Plus size={18} /> Create New Course</>}
                 </button>
             </div>
@@ -198,7 +251,20 @@ export default function InstructorDashboard() {
                             </div>
                         </div>
 
-                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)' }}>Curriculum</h2>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            Curriculum
+                            <button 
+                                type="button" 
+                                onClick={() => {
+                                    const url = window.prompt("Enter YouTube Playlist URL:");
+                                    if (url) handlePlaylistImport(url);
+                                }}
+                                className="btn btn-outline flex items-center gap-2" 
+                                style={{ fontSize: '0.875rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                            >
+                                <Plus size={16} /> Bulk Import from Playlist
+                            </button>
+                        </h2>
 
                         {sections.map((section, sIdx) => (
                             <div key={sIdx} style={{ backgroundColor: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', marginBottom: '1rem' }}>
@@ -252,10 +318,10 @@ export default function InstructorDashboard() {
                             <button onClick={() => { resetForm(); setShowCreateForm(true); }} className="btn btn-primary">Create Your First Course</button>
                         </div>
                     ) : (
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '2rem' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {courses.map(course => (
                                 <div key={course.id} className="card flex flex-col" style={{ padding: '1.5rem', height: '100%' }}>
-                                    <div style={{ height: '120px', backgroundColor: '#e2e8f0', backgroundImage: `url(${course.thumbnail})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }} />
+                                    <div style={{ height: '120px', backgroundColor: '#e2e8f0', backgroundImage: `url(${getCourseThumbnail(course.thumbnail)})`, backgroundSize: 'cover', backgroundPosition: 'center', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }} />
                                     <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>{course.title}</h3>
                                     <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>{course.total_lessons || 0} Lessons</p>
                                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>

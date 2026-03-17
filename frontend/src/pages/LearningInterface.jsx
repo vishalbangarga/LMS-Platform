@@ -16,7 +16,16 @@ export default function LearningInterface() {
     const [progress, setProgress] = useState(null);
     const [currentLesson, setCurrentLesson] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 1024);
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+    useEffect(() => {
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    const isMobile = windowWidth < 768;
 
     useEffect(() => {
         const fetchLearningData = async () => {
@@ -141,7 +150,7 @@ export default function LearningInterface() {
     const completedIds = progress?.completed_lesson_ids || [];
 
     return (
-        <div style={{ display: 'flex', height: 'calc(100vh - 4rem)', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', height: 'calc(100vh - 4rem)', overflow: 'hidden', position: 'relative' }}>
 
             {/* Main Content Area */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto', backgroundColor: 'var(--background)', position: 'relative' }}>
@@ -235,7 +244,17 @@ export default function LearningInterface() {
 
             {/* Sidebar (Curriculum) */}
             {sidebarOpen && (
-                <div style={{ width: '350px', borderLeft: '1px solid var(--border)', backgroundColor: 'var(--surface)', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ 
+                    width: isMobile ? '100%' : '350px', 
+                    position: isMobile ? 'absolute' : 'relative',
+                    zIndex: 40,
+                    height: '100%',
+                    borderLeft: '1px solid var(--border)', 
+                    backgroundColor: 'var(--surface)', 
+                    overflowY: 'auto', 
+                    display: 'flex', 
+                    flexDirection: 'column' 
+                }}>
                     <div style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600 }}>
                         Course Content
                     </div>

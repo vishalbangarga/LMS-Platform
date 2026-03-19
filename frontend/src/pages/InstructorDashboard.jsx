@@ -11,7 +11,7 @@ export default function InstructorDashboard() {
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [editingCourse, setEditingCourse] = useState(null);
+    const [editingCourseId, setEditingCourseId] = useState(null);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
